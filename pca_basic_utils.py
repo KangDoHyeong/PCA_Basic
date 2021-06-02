@@ -188,7 +188,6 @@ class PCA:
         FaceDB_info.to_csv("./db/FaceDB_info.csv", mode='w')
 
 
-    # 유클리디안 거리
     def Euclidean_recognition(self, img, mean_face, eigenvector, SID_weight, SID_index, threshold=5000):
         img = cv2.equalizeHist(img) - mean_face
         img_weight = np.dot(img.T,eigenvector)
@@ -202,17 +201,23 @@ class PCA:
         return SID
 
     
-    def cosine_recognition(self, img, mean_face, eigenvector, SID_weight, SID_index, threshold=50):
-        img = cv2.equalizeHist(img) - mean_face
-        img_weight = np.dot(img.T,eigenvector)
-        dist1 = np.sqrt(np.sum(img_weight*img_weight))
-        
-        cosine_similiarity = [(np.sum(img_weight*SID_weight[i]))/((dist1)*(np.sqrt(np.sum(SID_weight[i]*SID_weight[i])))) for i in range(SID_weight.shape[0])]
-        print(np.argmax(cosine_similiarity))
-        SID = SID_index[np.argmax(cosine_similiarity)]
-      
-        if (100*np.max(cosine_similiarity))<threshold:          
+    def cosine_recognition(self, img, threshold=50):
+        img = cv2.equalizeHist(img) - self.mean_face
+        img_weight = np.dot(img.T, self.eigenvector)
+        # dist1 = np.sqrt(np.sum(img_weight*img_weight)) 
+        dist1 = LA.norm(img_weight)
+        cosine_list = []
+        for i in range(self.SID_weight.shape[0]):
+            #dist2 = np.sqrt(np.sum(self.SID_weight[i]*self.SID_weight[i]))
+            dist2 = LA.norm(self.SID_weight[i])
+            cosine_similiarity = np.dot(img_weight, self.SID_weight[i])/(dist1 * dist2)
+            cosine_list.append(cosine_similiarity)
+
+
+        if (100*np.max(cosine_list))<threshold:          
             return "None"
+        
+        SID = self.SID_index[np.argmax(cosine_list)]
         return SID
 
     def face_register(self):  
@@ -225,6 +230,6 @@ class PCA:
     def face_test(self, img):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
-        SID = self.cosine_recognition(gray.reshape(-1), self.mean_face, self.eigenvector, self.SID_weight, self.SID_index)
+        SID = self.cosine_recognition(gray.reshape(-1))
         
         return SID
