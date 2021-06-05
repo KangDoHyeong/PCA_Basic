@@ -152,7 +152,7 @@ class PCA:
         #zero_eigen = np.where(abs(w)<1e-4)[0]
         
         j=0
-        for i in range(len(zero_eigen)):
+        for i in zero_eigen:
             w = np.delete(w, i-j, axis=0)
             v = np.delete(v, i-j, axis=1)
             j += 1
